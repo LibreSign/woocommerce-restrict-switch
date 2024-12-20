@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 add_filter( 'woocommerce_related_products', 'exclude_specific_products_from_related', 10, 3 );
 
 function exclude_specific_products_from_related( $related_products, $product_id, $args ) {
-    $excluded_ids = wrd_disallowed_switch_to();
+    $excluded_ids = wrd_disallow_switch_to();
 
     $related_products = array_diff( $related_products, $excluded_ids );
 
@@ -82,7 +82,7 @@ function wrd_hide_products_for_authenticated_users( $q ) {
     if ( !is_user_logged_in() || is_admin() || !$q->is_main_query() || wrd_allow_switching() === 'no' ) {
         return;
     }
-    $restricted_switch = wrd_disallowed_switch_to();
+    $restricted_switch = wrd_disallow_switch_to();
     if (!$restricted_switch) {
         return;
     }
@@ -93,7 +93,7 @@ function wrd_hide_products_for_authenticated_users( $q ) {
     $q->set( 'post__not_in', $not_in );
 }
 
-function wrd_disallowed_switch_to(): array {
+function wrd_disallow_switch_to(): array {
     $user_id = get_current_user_id();
     $subscriptions = wcs_get_users_subscriptions($user_id);
     $restricted_switch = [];
