@@ -16,7 +16,3 @@ Restrict switch to products that isn't upsell of a produdct
 * Go to "`Linked products`"
 * Define the upsells products. Is the products that you want allow to switch to.
 * Check the box "restrict siwtch"
-
-## to-do
-
-- [ ] If a product belongs to a parent group product that I already have a subscription that also belongs to this product, I cant't see this product at any place
