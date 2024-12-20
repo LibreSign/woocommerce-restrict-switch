@@ -1,25 +1,29 @@
 <?php
 /**
- * WooCommerce Restrict Downgrade
+ * WooCommerce Restrict switch
  *
- * @package   woocommerce-restrict-downgrade
+ * @package   woocommerce-restrict-switch
  * @author    LibreCode <contact@librecode.coop>
  * @license   GPL-2.0+
- * @link      http://github.com/libresign/woocommerce-restrict-downgrade
+ * @link      http://github.com/libresign/woocommerce-restrict-switch
  * @copyright 2024 LibreCode
  *
  * @wordpress-plugin
- * Plugin Name:       WooCommerce Restrict Downgrade
- * Plugin URI:        https://github.com/LibreSign/woocommerce-restrict-downgrade
- * Description:       Restrict downgrade products when using the plugin WooCommerce Subscriptions with the option to allow upgrade or downgrade.
+ * Plugin Name:       WooCommerce Restrict switch
+ * Plugin URI:        https://github.com/LibreSign/woocommerce-restrict-switch
+ * Description:       Restrict switch to products that isn't upsell of a produdct.
  * Version:           0.0.1
  * Author:            LibreCode
  * Author URI:        https://github.com/LibreSign
- * Text Domain:       woocommerce-restrict-downgrade
+ * Text Domain:       woocommerce-restrict-switch
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
- * GitHub Plugin URI: https://github.com/LibreSign/woocommerce-restrict-downgrade
+ * GitHub Plugin URI: https://github.com/LibreSign/woocommerce-restrict-switch
  */
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
 
 add_filter('woocommerce_product_get_children', 'wrd_product_get_children', 10, 2);
 
