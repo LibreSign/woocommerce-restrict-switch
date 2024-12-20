@@ -43,12 +43,12 @@ function wrd_product_get_children($children, $product) {
     if (wrd_allow_switching() === 'no' || !is_user_logged_in() || is_admin() || ! $product instanceof WC_Product_Grouped) {
         return $children;
     }
-    $switch_to = wrd_allow_switch_to();
+    $switch_to = wrd_allow_switch_to($children);
     $intersect = array_intersect($children, $switch_to);
     return $intersect;
 }
 
-function wrd_allow_switch_to():array {
+function wrd_allow_switch_to(array $deny_list = []):array {
     $user_id = get_current_user_id();
     $subscriptions = wcs_get_users_subscriptions($user_id);
     $switch_to = [];
@@ -61,7 +61,7 @@ function wrd_allow_switch_to():array {
             } else {
                 $current_product = $item->get_product();
             }
-            if (!in_array($current_product->get_id(), $children)) {
+            if (!in_array($current_product->get_id(), $deny_list)) {
                 continue;
             }
             $restrict_herself_upsells_switch = get_post_meta($current_product->get_id(), 'restrict_herself_upsells_switch', true);
