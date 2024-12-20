@@ -25,6 +25,17 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// Filter related products
+add_filter( 'woocommerce_related_products', 'exclude_specific_products_from_related', 10, 3 );
+
+function exclude_specific_products_from_related( $related_products, $product_id, $args ) {
+    $excluded_ids = wrd_disallowed_switch_to();
+
+    $related_products = array_diff( $related_products, $excluded_ids );
+
+    return $related_products;
+}
+
 // Filter children products
 add_filter('woocommerce_product_get_children', 'wrd_product_get_children', 10, 2);
 
@@ -32,6 +43,12 @@ function wrd_product_get_children($children, $product) {
     if (wrd_allow_switching() === 'no' || !is_user_logged_in() || is_admin() || ! $product instanceof WC_Product_Grouped) {
         return $children;
     }
+    $switch_to = wrd_allow_switch_to();
+    $intersect = array_intersect($children, $switch_to);
+    return $intersect;
+}
+
+function wrd_allow_switch_to():array {
     $user_id = get_current_user_id();
     $subscriptions = wcs_get_users_subscriptions($user_id);
     $switch_to = [];
@@ -55,8 +72,7 @@ function wrd_product_get_children($children, $product) {
             $switch_to[] = $current_product->get_id();
         }
     }
-    $intersect = array_intersect($children, $switch_to);
-    return $intersect;
+    return $switch_to;
 }
 
 // Filter post list
@@ -66,6 +82,18 @@ function wrd_hide_products_for_authenticated_users( $q ) {
     if ( !is_user_logged_in() || is_admin() || !$q->is_main_query() || wrd_allow_switching() === 'no' ) {
         return;
     }
+    $restricted_switch = wrd_disallowed_switch_to();
+    if (!$restricted_switch) {
+        return;
+    }
+    $not_in = array_merge(
+        $q->get('post__not_in'),
+        $restricted_switch,
+    );
+    $q->set( 'post__not_in', $not_in );
+}
+
+function wrd_disallowed_switch_to(): array {
     $user_id = get_current_user_id();
     $subscriptions = wcs_get_users_subscriptions($user_id);
     $restricted_switch = [];
@@ -90,14 +118,7 @@ function wrd_hide_products_for_authenticated_users( $q ) {
             );
         }
     }
-    if (!$restricted_switch) {
-        return;
-    }
-    $not_in = array_merge(
-        $q->get('post__not_in'),
-        $restricted_switch,
-    );
-    $q->set( 'post__not_in', $not_in );
+    return $restricted_switch;
 }
 
 function wrd_get_grouped_products_containing_product( $product_id ) {
