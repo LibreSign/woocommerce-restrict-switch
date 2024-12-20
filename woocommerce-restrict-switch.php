@@ -25,6 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// Filter children products
 add_filter('woocommerce_product_get_children', 'wrd_product_get_children', 10, 2);
 
 function wrd_product_get_children($children, $product) {
@@ -56,6 +57,68 @@ function wrd_product_get_children($children, $product) {
     }
     $intersect = array_intersect($children, $switch_to);
     return $intersect;
+}
+
+// Filter post list
+add_action( 'pre_get_posts', 'wrd_hide_products_for_authenticated_users' );
+
+function wrd_hide_products_for_authenticated_users( $q ) {
+    if ( !is_user_logged_in() || is_admin() || !$q->is_main_query() || wrd_allow_switching() === 'no' ) {
+        return;
+    }
+    $user_id = get_current_user_id();
+    $subscriptions = wcs_get_users_subscriptions($user_id);
+    $restricted_switch = [];
+    foreach ($subscriptions as $subscription) {
+        $items = $subscription->get_items();
+        foreach ($items as $item) {
+            $current_product = $item->get_product();
+            if ($current_product instanceof WC_Product_Subscription_Variation) {
+                $current_product = wc_get_product($current_product->get_parent_id());
+            } else {
+                $current_product = $item->get_product();
+            }
+            $restrict_herself_upsells_switch = get_post_meta($current_product->get_id(), 'restrict_herself_upsells_switch', true);
+            if ($restrict_herself_upsells_switch !== 'yes') {
+                continue;
+            }
+            $grouped_products = wrd_get_grouped_products_containing_product($current_product->get_id());
+            $upsell_ids = $current_product->get_upsell_ids();
+            $restricted_switch = array_merge(
+                $restricted_switch,
+                array_diff($grouped_products, $upsell_ids, [$current_product->get_id()]),
+            );
+        }
+    }
+    if (!$restricted_switch) {
+        return;
+    }
+    $not_in = array_merge(
+        $q->get('post__not_in'),
+        $restricted_switch,
+    );
+    $q->set( 'post__not_in', $not_in );
+}
+
+function wrd_get_grouped_products_containing_product( $product_id ) {
+    global $wpdb;
+
+    $product_id = (int) $product_id;
+    $query = $wpdb->prepare(<<<SQL
+        SELECT post_id, meta_value
+          FROM $wpdb->postmeta
+         WHERE meta_key = '_children'
+           AND meta_value LIKE %s
+        SQL,
+        '%' . $wpdb->esc_like( 'i:' . $product_id . ';' ) . '%'
+    );
+
+    $results = $wpdb->get_results( $query );
+    $return = [];
+    foreach ($results as $row) {
+        $return = array_merge($return, unserialize($row->meta_value));
+    }
+    return $return;
 }
 
 add_action('woocommerce_product_options_related', 'wrd_add_restrict_herself_upsells_switch');
