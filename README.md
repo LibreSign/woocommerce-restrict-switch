@@ -64,4 +64,4 @@ It also fails on a test whose file no longer exists.
 
 `composer coverage` writes `tests/.coverage/clover.xml`. In CI,
 [octocov](https://github.com/k1LoW/octocov) fails the run when line coverage
-is below 80% or below the last report of `main` (`.octocov.yml`).
+is below 95% or below the last report of `main` (`.octocov.yml`).
