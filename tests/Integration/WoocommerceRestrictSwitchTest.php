@@ -166,6 +166,16 @@ final class WoocommerceRestrictSwitchTest extends WP_UnitTestCase {
 		$this->assertSame( array(), $query->get( 'post__not_in' ) );
 	}
 
+	public function test_ignores_a_subscription_to_a_deleted_plan() {
+		$this->subscribe_to( $this->basic );
+		$this->basic->delete( true );
+
+		$this->go_to( get_post_type_archive_link( 'product' ) );
+
+		$this->assertSame( array(), $GLOBALS['wp_query']->get( 'post__not_in' ) );
+		$this->assertSame( array(), array_values( $this->plans_offered_in_the_group() ) );
+	}
+
 	public function test_finds_every_plan_grouped_with_a_product() {
 		$other_group = $this->plans->group( array( $this->basic, $this->plans->plan( false ) ) );
 

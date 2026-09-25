@@ -66,6 +66,9 @@ function wrd_allow_switch_to(array $deny_list = []):array {
             } else {
                 $current_product = $item->get_product();
             }
+            if (!$current_product) {
+                continue;
+            }
             if (!in_array($current_product->get_id(), $deny_list)) {
                 continue;
             }
@@ -113,6 +116,9 @@ function wrd_disallow_switch_to(): array {
                 $current_product = wc_get_product($current_product->get_parent_id());
             } else {
                 $current_product = $item->get_product();
+            }
+            if (!$current_product) {
+                continue;
             }
             $restrict_herself_upsells_switch = get_post_meta($current_product->get_id(), 'restrict_herself_upsells_switch', true);
             if ($restrict_herself_upsells_switch !== 'yes') {
