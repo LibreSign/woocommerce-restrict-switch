@@ -36,8 +36,8 @@
     <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
         <properties>
             <property name="prefixes" type="array">
-                <element value="wrd_"/>
-                <element value="WRD_"/>
+                <element value="restrict_switch_"/>
+                <element value="RESTRICT_SWITCH_"/>
                 <element value="LibreSign\WooRestrictSwitch"/>
             </property>
         </properties>
