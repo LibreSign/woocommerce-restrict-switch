@@ -57,6 +57,9 @@ function wrd_allow_switch_to(array $deny_list = []):array {
     foreach ($subscriptions as $subscription) {
         $items = $subscription->get_items();
         foreach ($items as $item) {
+            if (!$item instanceof WC_Order_Item_Product) {
+                continue;
+            }
             $current_product = $item->get_product();
             if ($current_product instanceof WC_Product_Subscription_Variation) {
                 $current_product = wc_get_product($current_product->get_parent_id());
@@ -102,6 +105,9 @@ function wrd_disallow_switch_to(): array {
     foreach ($subscriptions as $subscription) {
         $items = $subscription->get_items();
         foreach ($items as $item) {
+            if (!$item instanceof WC_Order_Item_Product) {
+                continue;
+            }
             $current_product = $item->get_product();
             if ($current_product instanceof WC_Product_Subscription_Variation) {
                 $current_product = wc_get_product($current_product->get_parent_id());
