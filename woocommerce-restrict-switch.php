@@ -28,10 +28,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Filter related products
-add_filter( 'woocommerce_related_products', 'wrd_exclude_specific_products_from_related', 10, 3 );
+add_filter( 'woocommerce_related_products', 'restrict_switch_exclude_specific_products_from_related', 10, 3 );
 
-function wrd_exclude_specific_products_from_related( $related_products, $product_id, $args ) {
-    $excluded_ids = wrd_disallow_switch_to();
+function restrict_switch_exclude_specific_products_from_related( $related_products, $product_id, $args ) {
+    $excluded_ids = restrict_switch_disallow_switch_to();
 
     $related_products = array_diff( $related_products, $excluded_ids );
 
@@ -39,13 +39,13 @@ function wrd_exclude_specific_products_from_related( $related_products, $product
 }
 
 // Filter children products
-add_filter('woocommerce_product_get_children', 'wrd_product_get_children', 10, 2);
+add_filter('woocommerce_product_get_children', 'restrict_switch_product_get_children', 10, 2);
 
-function wrd_product_get_children($children, $product) {
-    if (wrd_allow_switching() === 'no' || !is_user_logged_in() || is_admin() || ! $product instanceof WC_Product_Grouped) {
+function restrict_switch_product_get_children($children, $product) {
+    if (restrict_switch_allow_switching() === 'no' || !is_user_logged_in() || is_admin() || ! $product instanceof WC_Product_Grouped) {
         return $children;
     }
-    $switch_to = wrd_allow_switch_to($children);
+    $switch_to = restrict_switch_allow_switch_to($children);
     if (!$switch_to) {
         return $children;
     }
@@ -53,7 +53,7 @@ function wrd_product_get_children($children, $product) {
     return $intersect;
 }
 
-function wrd_allow_switch_to(array $deny_list = []):array {
+function restrict_switch_allow_switch_to(array $deny_list = []):array {
     $user_id = get_current_user_id();
     $subscriptions = wcs_get_users_subscriptions($user_id);
     $switch_to = [];
@@ -87,13 +87,13 @@ function wrd_allow_switch_to(array $deny_list = []):array {
 }
 
 // Filter post list
-add_action( 'pre_get_posts', 'wrd_hide_products_for_authenticated_users' );
+add_action( 'pre_get_posts', 'restrict_switch_hide_products_for_authenticated_users' );
 
-function wrd_hide_products_for_authenticated_users( $q ) {
-    if ( !is_user_logged_in() || is_admin() || !$q->is_main_query() || wrd_allow_switching() === 'no' ) {
+function restrict_switch_hide_products_for_authenticated_users( $q ) {
+    if ( !is_user_logged_in() || is_admin() || !$q->is_main_query() || restrict_switch_allow_switching() === 'no' ) {
         return;
     }
-    $restricted_switch = wrd_disallow_switch_to();
+    $restricted_switch = restrict_switch_disallow_switch_to();
     if (!$restricted_switch) {
         return;
     }
@@ -104,7 +104,7 @@ function wrd_hide_products_for_authenticated_users( $q ) {
     $q->set( 'post__not_in', $not_in );
 }
 
-function wrd_disallow_switch_to(): array {
+function restrict_switch_disallow_switch_to(): array {
     $user_id = get_current_user_id();
     $subscriptions = wcs_get_users_subscriptions($user_id);
     $restricted_switch = [];
@@ -127,7 +127,7 @@ function wrd_disallow_switch_to(): array {
             if ($restrict_herself_upsells_switch !== 'yes') {
                 continue;
             }
-            $grouped_products = wrd_get_grouped_products_containing_product($current_product->get_id());
+            $grouped_products = restrict_switch_get_grouped_products_containing_product($current_product->get_id());
             $upsell_ids = $current_product->get_upsell_ids();
             $restricted_switch = array_merge(
                 $restricted_switch,
@@ -138,7 +138,7 @@ function wrd_disallow_switch_to(): array {
     return $restricted_switch;
 }
 
-function wrd_get_grouped_products_containing_product( $product_id ) {
+function restrict_switch_get_grouped_products_containing_product( $product_id ) {
     global $wpdb;
 
     $product_id = (int) $product_id;
@@ -158,10 +158,10 @@ function wrd_get_grouped_products_containing_product( $product_id ) {
     return $return;
 }
 
-add_action('woocommerce_product_options_related', 'wrd_add_restrict_herself_upsells_switch');
+add_action('woocommerce_product_options_related', 'restrict_switch_add_restrict_herself_upsells_switch');
 
-function wrd_add_restrict_herself_upsells_switch() {
-    if (wrd_allow_switching() === 'no') {
+function restrict_switch_add_restrict_herself_upsells_switch() {
+    if (restrict_switch_allow_switching() === 'no') {
         return;
     }
     woocommerce_wp_checkbox(array(
@@ -171,15 +171,15 @@ function wrd_add_restrict_herself_upsells_switch() {
     ));
 }
 
-add_action('woocommerce_process_product_meta', 'wrd_save_restrict_herself_upsells_switch');
+add_action('woocommerce_process_product_meta', 'restrict_switch_save_restrict_herself_upsells_switch');
 
-function wrd_save_restrict_herself_upsells_switch($post_id) {
+function restrict_switch_save_restrict_herself_upsells_switch($post_id) {
     // phpcs:ignore WordPress.Security.NonceVerification.Missing
     $restrict_herself_upsells_switch = isset($_POST['restrict_herself_upsells_switch']) ? 'yes' : 'no';
     update_post_meta($post_id, 'restrict_herself_upsells_switch', $restrict_herself_upsells_switch);
 }
 
-function wrd_allow_switching(): string {
+function restrict_switch_allow_switching(): string {
     $allow_switching = get_option( 'woocommerce_subscriptions_allow_switching', 'no' );
     if ( ! in_array( $allow_switching, array( 'no', 'variable', 'grouped', 'variable_grouped' ) ) ) {
         return 'no';

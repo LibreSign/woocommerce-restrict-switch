@@ -1,4 +1,4 @@
-name: wrd-e2e
+name: restrict-switch-e2e
 
 services:
   mariadb:

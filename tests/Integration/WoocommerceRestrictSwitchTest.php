@@ -59,7 +59,7 @@ final class WoocommerceRestrictSwitchTest extends WP_UnitTestCase {
 	public function test_reads_the_switching_option_of_subscriptions( $option, $expected ) {
 		update_option( 'woocommerce_subscriptions_allow_switching', $option );
 
-		$this->assertSame( $expected, wrd_allow_switching() );
+		$this->assertSame( $expected, restrict_switch_allow_switching() );
 	}
 
 	public static function provide_switching_options() {
@@ -73,7 +73,7 @@ final class WoocommerceRestrictSwitchTest extends WP_UnitTestCase {
 	public function test_reads_a_missing_switching_option_as_disabled() {
 		delete_option( 'woocommerce_subscriptions_allow_switching' );
 
-		$this->assertSame( 'no', wrd_allow_switching() );
+		$this->assertSame( 'no', restrict_switch_allow_switching() );
 	}
 
 	public function test_offers_a_subscriber_their_own_plan_and_its_upsells() {
@@ -194,12 +194,12 @@ final class WoocommerceRestrictSwitchTest extends WP_UnitTestCase {
 
 		$this->assertSame(
 			array_merge( $this->ids( $this->basic, $this->professional, $this->enterprise ), $other_group->get_children() ),
-			wrd_get_grouped_products_containing_product( $this->basic->get_id() )
+			restrict_switch_get_grouped_products_containing_product( $this->basic->get_id() )
 		);
 	}
 
 	public function test_finds_nothing_for_a_product_outside_any_group() {
-		$this->assertSame( array(), wrd_get_grouped_products_containing_product( $this->plans->plan( true )->get_id() ) );
+		$this->assertSame( array(), restrict_switch_get_grouped_products_containing_product( $this->plans->plan( true )->get_id() ) );
 	}
 
 	public function test_saves_the_restriction_when_the_box_is_checked() {
