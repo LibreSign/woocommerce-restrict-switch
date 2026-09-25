@@ -2,6 +2,8 @@
 
 class WC_Subscription extends WC_Order {}
 
+class WC_Product_Subscription extends WC_Product_Simple {}
+
 class WC_Product_Variable_Subscription extends WC_Product_Variable {}
 
 class WC_Product_Subscription_Variation extends WC_Product_Variation {}

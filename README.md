@@ -53,3 +53,20 @@ docker exec wordpress-docker-mariadb-1 \
 docker exec -w /var/www/html/wp-content/plugins/woocommerce-restrict-switch \
   wordpress-docker-wordpress-1 composer test
 ```
+
+### Browser tests
+
+`tests/E2E/WoocommerceRestrictSwitch.spec.ts` covers the plugin end to end: a
+customer subscribed to a restricted plan browses the shop and switches plans
+from My Account.
+
+They need Docker, Node.js and a `composer install`, since the stack mounts
+WooCommerce and Subscriptions from `vendor/test-plugins`:
+
+```bash
+npm ci
+npx playwright install chromium
+npm run env:start    # WordPress on :8889
+npm run test:e2e
+npm run env:stop
+```
