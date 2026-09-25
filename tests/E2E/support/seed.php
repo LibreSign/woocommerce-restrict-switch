@@ -1,5 +1,7 @@
 <?php
 
+wc_transaction_query( 'start' );
+
 $wrd_plans = array();
 
 foreach ( array( 'Basic', 'Professional', 'Enterprise' ) as $wrd_name ) {
@@ -52,3 +54,5 @@ $wrd_subscription = wcs_create_subscription(
 $wrd_subscription->add_product( $wrd_plans['Basic'] );
 $wrd_subscription->calculate_totals();
 $wrd_subscription->update_status( 'active' );
+
+wc_transaction_query( 'commit' );
