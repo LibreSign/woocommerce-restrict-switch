@@ -198,6 +198,17 @@ final class WoocommerceRestrictSwitchTest extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_does_not_instantiate_objects_stored_among_the_grouped_products() {
+		$plan  = $this->plans->plan( true );
+		$group = self::factory()->post->create( array( 'post_type' => 'product' ) );
+		update_post_meta( $group, '_children', array( $plan->get_id(), new \ArrayObject() ) );
+
+		$found = wrd_get_grouped_products_containing_product( $plan->get_id() );
+
+		$this->assertSame( $plan->get_id(), $found[0] );
+		$this->assertInstanceOf( \__PHP_Incomplete_Class::class, $found[1] );
+	}
+
 	public function test_finds_nothing_for_a_product_outside_any_group() {
 		$this->assertSame( array(), wrd_get_grouped_products_containing_product( $this->plans->plan( true )->get_id() ) );
 	}

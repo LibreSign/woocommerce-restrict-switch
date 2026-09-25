@@ -117,7 +117,7 @@ function wrd_get_grouped_products_containing_product( $product_id ) {
     ) );
     $return = [];
     foreach ($results as $row) {
-        $return = array_merge($return, unserialize($row->meta_value));
+        $return = array_merge($return, unserialize($row->meta_value, ['allowed_classes' => false]));
     }
     return $return;
 }
