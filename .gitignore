@@ -1,4 +1,4 @@
+/tests/.coverage/
 /vendor/
 /vendor-bin/*/vendor/
 /.phpunit.result.cache
-/tests/.coverage/
