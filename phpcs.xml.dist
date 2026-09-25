@@ -40,6 +40,7 @@
                 <element value="WRD_"/>
             </property>
         </properties>
+        <exclude-pattern>/tests/*</exclude-pattern>
     </rule>
 
     <rule ref="Generic.PHP.DisallowShortOpenTag"/>
