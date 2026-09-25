@@ -99,6 +99,18 @@ final class WoocommerceRestrictSwitchTest extends WP_UnitTestCase {
 		$this->assertSame( $this->ids( $this->basic, $this->professional, $this->enterprise ), $this->plans_offered_in_the_group() );
 	}
 
+	public function test_offers_every_plan_to_a_customer_without_subscriptions() {
+		wp_set_current_user( $this->customer );
+
+		$this->assertSame( $this->ids( $this->basic, $this->professional, $this->enterprise ), $this->plans_offered_in_the_group() );
+	}
+
+	public function test_offers_every_plan_to_a_subscriber_of_an_unrestricted_plan() {
+		$this->subscribe_to( $this->plans->plan( false ) );
+
+		$this->assertSame( $this->ids( $this->basic, $this->professional, $this->enterprise ), $this->plans_offered_in_the_group() );
+	}
+
 	public function test_offers_every_plan_when_switching_is_disabled() {
 		update_option( 'woocommerce_subscriptions_allow_switching', 'no' );
 		$this->subscribe_to( $this->basic );
@@ -168,12 +180,13 @@ final class WoocommerceRestrictSwitchTest extends WP_UnitTestCase {
 
 	public function test_ignores_a_subscription_to_a_deleted_plan() {
 		$this->subscribe_to( $this->basic );
+		$every_plan = $this->ids( $this->basic, $this->professional, $this->enterprise );
 		$this->basic->delete( true );
 
 		$this->go_to( get_post_type_archive_link( 'product' ) );
 
 		$this->assertSame( array(), $GLOBALS['wp_query']->get( 'post__not_in' ) );
-		$this->assertSame( array(), array_values( $this->plans_offered_in_the_group() ) );
+		$this->assertSame( $every_plan, $this->plans_offered_in_the_group() );
 	}
 
 	public function test_finds_every_plan_grouped_with_a_product() {

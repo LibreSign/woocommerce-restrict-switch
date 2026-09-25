@@ -46,6 +46,9 @@ function wrd_product_get_children($children, $product) {
         return $children;
     }
     $switch_to = wrd_allow_switch_to($children);
+    if (!$switch_to) {
+        return $children;
+    }
     $intersect = array_intersect($children, $switch_to);
     return $intersect;
 }
