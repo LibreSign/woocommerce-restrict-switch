@@ -27,6 +27,7 @@ composer cs    # PHPCS
 composer stan  # PHPStan
 composer test  # PHPUnit
 composer ci    # all of the above, in this order
+composer coverage  # PHPUnit with a coverage report for octocov
 ```
 
 ### Tests
@@ -53,3 +54,14 @@ docker exec wordpress-docker-mariadb-1 \
 docker exec -w /var/www/html/wp-content/plugins/woocommerce-restrict-switch \
   wordpress-docker-wordpress-1 composer test
 ```
+
+### Layout and coverage
+
+`tests/Unit/StructureTest.php` checks that every file of the plugin has a test
+named after it: `src/SwitchRestriction.php` has `tests/Unit/SwitchRestrictionTest.php`
+and the main file has `tests/Integration/WoocommerceRestrictSwitchTest.php`.
+It also fails on a test whose file no longer exists.
+
+`composer coverage` writes `tests/.coverage/clover.xml`. In CI,
+[octocov](https://github.com/k1LoW/octocov) fails the run when line coverage
+is below 80% or below the last report of `main` (`.octocov.yml`).
