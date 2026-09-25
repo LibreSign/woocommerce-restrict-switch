@@ -23,9 +23,13 @@
  * GitHub Plugin URI: https://github.com/LibreSign/woocommerce-restrict-switch
  */
 
+use LibreSign\WooRestrictSwitch\SwitchRestriction;
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
+
+require_once __DIR__ . '/src/SwitchRestriction.php';
 
 // Filter related products
 add_filter( 'woocommerce_related_products', 'wrd_exclude_specific_products_from_related', 10, 3 );
@@ -45,45 +49,7 @@ function wrd_product_get_children($children, $product) {
     if (wrd_allow_switching() === 'no' || !is_user_logged_in() || is_admin() || ! $product instanceof WC_Product_Grouped) {
         return $children;
     }
-    $switch_to = wrd_allow_switch_to($children);
-    if (!$switch_to) {
-        return $children;
-    }
-    $intersect = array_intersect($children, $switch_to);
-    return $intersect;
-}
-
-function wrd_allow_switch_to(array $deny_list = []):array {
-    $user_id = get_current_user_id();
-    $subscriptions = wcs_get_users_subscriptions($user_id);
-    $switch_to = [];
-    foreach ($subscriptions as $subscription) {
-        $items = $subscription->get_items();
-        foreach ($items as $item) {
-            if (!$item instanceof WC_Order_Item_Product) {
-                continue;
-            }
-            $current_product = $item->get_product();
-            if ($current_product instanceof WC_Product_Subscription_Variation) {
-                $current_product = wc_get_product($current_product->get_parent_id());
-            } else {
-                $current_product = $item->get_product();
-            }
-            if (!$current_product) {
-                continue;
-            }
-            if (!in_array($current_product->get_id(), $deny_list)) {
-                continue;
-            }
-            $restrict_herself_upsells_switch = get_post_meta($current_product->get_id(), 'restrict_herself_upsells_switch', true);
-            if ($restrict_herself_upsells_switch !== 'yes') {
-                continue;
-            }
-            $switch_to = array_merge($switch_to, $current_product->get_upsell_ids());
-            $switch_to[] = $current_product->get_id();
-        }
-    }
-    return $switch_to;
+    return SwitchRestriction::offered_in_group($children, wrd_restricted_plans());
 }
 
 // Filter post list
@@ -105,37 +71,35 @@ function wrd_hide_products_for_authenticated_users( $q ) {
 }
 
 function wrd_disallow_switch_to(): array {
-    $user_id = get_current_user_id();
-    $subscriptions = wcs_get_users_subscriptions($user_id);
-    $restricted_switch = [];
-    foreach ($subscriptions as $subscription) {
-        $items = $subscription->get_items();
-        foreach ($items as $item) {
+    $restricted_plans = wrd_restricted_plans();
+    $grouped_with = [];
+    foreach (array_keys($restricted_plans) as $plan) {
+        $grouped_with[$plan] = wrd_get_grouped_products_containing_product($plan);
+    }
+    return SwitchRestriction::hidden($restricted_plans, $grouped_with);
+}
+
+function wrd_restricted_plans(): array {
+    $restricted_plans = [];
+    foreach (wcs_get_users_subscriptions(get_current_user_id()) as $subscription) {
+        foreach ($subscription->get_items() as $item) {
             if (!$item instanceof WC_Order_Item_Product) {
                 continue;
             }
             $current_product = $item->get_product();
             if ($current_product instanceof WC_Product_Subscription_Variation) {
                 $current_product = wc_get_product($current_product->get_parent_id());
-            } else {
-                $current_product = $item->get_product();
             }
             if (!$current_product) {
                 continue;
             }
-            $restrict_herself_upsells_switch = get_post_meta($current_product->get_id(), 'restrict_herself_upsells_switch', true);
-            if ($restrict_herself_upsells_switch !== 'yes') {
+            if (get_post_meta($current_product->get_id(), 'restrict_herself_upsells_switch', true) !== 'yes') {
                 continue;
             }
-            $grouped_products = wrd_get_grouped_products_containing_product($current_product->get_id());
-            $upsell_ids = $current_product->get_upsell_ids();
-            $restricted_switch = array_merge(
-                $restricted_switch,
-                array_diff($grouped_products, $upsell_ids, [$current_product->get_id()]),
-            );
+            $restricted_plans[$current_product->get_id()] = $current_product->get_upsell_ids();
         }
     }
-    return $restricted_switch;
+    return $restricted_plans;
 }
 
 function wrd_get_grouped_products_containing_product( $product_id ) {
