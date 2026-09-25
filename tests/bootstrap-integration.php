@@ -4,34 +4,34 @@ if ( 'cli' !== PHP_SAPI && 'phpdbg' !== PHP_SAPI ) {
 	exit;
 }
 
-$wrd_autoload = dirname( __DIR__ ) . '/vendor/autoload.php';
+$composer_autoload = dirname( __DIR__ ) . '/vendor/autoload.php';
 
-if ( ! file_exists( $wrd_autoload ) ) {
+if ( ! file_exists( $composer_autoload ) ) {
 	echo 'Error: run `composer install` before running the tests.' . PHP_EOL;
 	exit( 1 );
 }
 
-require_once $wrd_autoload;
+require_once $composer_autoload;
 
 define( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH', dirname( __DIR__ ) . '/vendor-bin/phpunit/vendor/yoast/phpunit-polyfills' );
 
 putenv( 'WP_PHPUNIT__TESTS_CONFIG=' . __DIR__ . '/wp-tests-config.php' );
 
-$wrd_wp_phpunit_dir = getenv( 'WP_PHPUNIT__DIR' );
+$wp_phpunit_dir = getenv( 'WP_PHPUNIT__DIR' );
 
-if ( false === $wrd_wp_phpunit_dir || '' === $wrd_wp_phpunit_dir ) {
-	$wrd_wp_phpunit_dir = dirname( __DIR__ ) . '/vendor/wp-phpunit/wp-phpunit';
+if ( false === $wp_phpunit_dir || '' === $wp_phpunit_dir ) {
+	$wp_phpunit_dir = dirname( __DIR__ ) . '/vendor/wp-phpunit/wp-phpunit';
 }
 
-$wrd_test_plugins = dirname( __DIR__ ) . '/vendor/test-plugins';
+$test_plugins_dir = dirname( __DIR__ ) . '/vendor/test-plugins';
 
-require_once $wrd_wp_phpunit_dir . '/includes/functions.php';
+require_once $wp_phpunit_dir . '/includes/functions.php';
 
 tests_add_filter(
 	'muplugins_loaded',
-	static function () use ( $wrd_test_plugins ) {
-		require $wrd_test_plugins . '/woocommerce/woocommerce.php';
-		require $wrd_test_plugins . '/woocommerce-subscriptions/woocommerce-subscriptions.php';
+	static function () use ( $test_plugins_dir ) {
+		require $test_plugins_dir . '/woocommerce/woocommerce.php';
+		require $test_plugins_dir . '/woocommerce-subscriptions/woocommerce-subscriptions.php';
 		require dirname( __DIR__ ) . '/woocommerce-restrict-switch.php';
 	}
 );
@@ -60,4 +60,4 @@ tests_add_filter(
 	}
 );
 
-require $wrd_wp_phpunit_dir . '/includes/bootstrap.php';
+require $wp_phpunit_dir . '/includes/bootstrap.php';
