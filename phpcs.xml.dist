@@ -38,6 +38,7 @@
             <property name="prefixes" type="array">
                 <element value="restrict_switch_"/>
                 <element value="RESTRICT_SWITCH_"/>
+                <element value="LibreSign\WooRestrictSwitch"/>
             </property>
         </properties>
         <exclude-pattern>/tests/*</exclude-pattern>
