@@ -16,3 +16,14 @@ Restrict switch to products that isn't upsell of a produdct
 * Go to "`Linked products`"
 * Define the upsells products. Is the products that you want allow to switch to.
 * Check the box "restrict siwtch"
+
+## Development
+
+Every check is a Composer script:
+
+```bash
+composer lint  # php -l on every file
+composer cs    # PHPCS
+composer stan  # PHPStan
+composer ci    # all of the above, in this order
+```

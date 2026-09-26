@@ -1,0 +1,11 @@
+includes:
+    - vendor-bin/phpstan/vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - woocommerce-restrict-switch.php
+    bootstrapFiles:
+        - vendor-bin/phpstan/vendor/php-stubs/woocommerce-stubs/woocommerce-stubs.php
+    scanFiles:
+        - stubs/woocommerce-subscriptions.php

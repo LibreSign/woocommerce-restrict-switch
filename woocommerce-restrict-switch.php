@@ -13,6 +13,8 @@
  * Plugin URI:        https://github.com/LibreSign/woocommerce-restrict-switch
  * Description:       Restrict switch to products that isn't upsell of a produdct.
  * Version:           0.0.1
+ * Requires at least: 7.0
+ * Requires PHP:      8.3
  * Author:            LibreCode
  * Author URI:        https://github.com/LibreSign
  * Text Domain:       woocommerce-restrict-switch
@@ -26,9 +28,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Filter related products
-add_filter( 'woocommerce_related_products', 'exclude_specific_products_from_related', 10, 3 );
+add_filter( 'woocommerce_related_products', 'wrd_exclude_specific_products_from_related', 10, 3 );
 
-function exclude_specific_products_from_related( $related_products, $product_id, $args ) {
+function wrd_exclude_specific_products_from_related( $related_products, $product_id, $args ) {
     $excluded_ids = wrd_disallow_switch_to();
 
     $related_products = array_diff( $related_products, $excluded_ids );
@@ -55,6 +57,9 @@ function wrd_allow_switch_to(array $deny_list = []):array {
     foreach ($subscriptions as $subscription) {
         $items = $subscription->get_items();
         foreach ($items as $item) {
+            if (!$item instanceof WC_Order_Item_Product) {
+                continue;
+            }
             $current_product = $item->get_product();
             if ($current_product instanceof WC_Product_Subscription_Variation) {
                 $current_product = wc_get_product($current_product->get_parent_id());
@@ -100,6 +105,9 @@ function wrd_disallow_switch_to(): array {
     foreach ($subscriptions as $subscription) {
         $items = $subscription->get_items();
         foreach ($items as $item) {
+            if (!$item instanceof WC_Order_Item_Product) {
+                continue;
+            }
             $current_product = $item->get_product();
             if ($current_product instanceof WC_Product_Subscription_Variation) {
                 $current_product = wc_get_product($current_product->get_parent_id());
@@ -125,16 +133,15 @@ function wrd_get_grouped_products_containing_product( $product_id ) {
     global $wpdb;
 
     $product_id = (int) $product_id;
-    $query = $wpdb->prepare(<<<SQL
+    // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+    $results = $wpdb->get_results( $wpdb->prepare(<<<SQL
         SELECT post_id, meta_value
           FROM $wpdb->postmeta
          WHERE meta_key = '_children'
            AND meta_value LIKE %s
         SQL,
         '%' . $wpdb->esc_like( 'i:' . $product_id . ';' ) . '%'
-    );
-
-    $results = $wpdb->get_results( $query );
+    ) );
     $return = [];
     foreach ($results as $row) {
         $return = array_merge($return, unserialize($row->meta_value));
@@ -158,6 +165,7 @@ function wrd_add_restrict_herself_upsells_switch() {
 add_action('woocommerce_process_product_meta', 'wrd_save_restrict_herself_upsells_switch');
 
 function wrd_save_restrict_herself_upsells_switch($post_id) {
+    // phpcs:ignore WordPress.Security.NonceVerification.Missing
     $restrict_herself_upsells_switch = isset($_POST['restrict_herself_upsells_switch']) ? 'yes' : 'no';
     update_post_meta($post_id, 'restrict_herself_upsells_switch', $restrict_herself_upsells_switch);
 }
