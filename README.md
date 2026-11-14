@@ -17,6 +17,13 @@ Restrict switch to products that isn't upsell of a produdct
 * Define the upsells products. Is the products that you want allow to switch to.
 * Check the box "restrict siwtch"
 
+A customer subscribed to a restricted product can switch only to that product
+or one of its upsells. Any other product is refused when it is added to the
+cart as a switch, whatever the page or API used to add it.
+
+The restriction applies between grouped subscriptions. A switch between
+subscription variations stays inside the same product, so it is always allowed.
+
 ## Development
 
 Every check is a Composer script:

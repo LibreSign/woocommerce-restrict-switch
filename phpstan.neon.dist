@@ -14,5 +14,6 @@ parameters:
         - vendor-bin/phpunit/vendor/autoload.php
     scanFiles:
         - stubs/woocommerce-subscriptions.php
+        - stubs/woocommerce-subscriptions-request.php
     scanDirectories:
         - vendor/wp-phpunit/wp-phpunit/includes

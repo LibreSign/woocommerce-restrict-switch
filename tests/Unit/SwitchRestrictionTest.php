@@ -97,4 +97,19 @@ final class SwitchRestrictionTest extends TestCase {
 			array( self::PROFESSIONAL, self::BASIC ),
 		);
 	}
+
+	/**
+	 * @dataProvider provide_switch_targets
+	 */
+	public function test_allows_switching_only_to_the_plan_itself_or_its_upsells( $target, $upsells, $expected ) {
+		$this->assertSame( $expected, SwitchRestriction::allows_switch_to( $target, self::BASIC, $upsells ) );
+	}
+
+	public static function provide_switch_targets() {
+		yield 'an upsell'                                 => array( self::ENTERPRISE, array( self::ENTERPRISE ), true );
+		yield 'the plan itself'                           => array( self::BASIC, array( self::ENTERPRISE ), true );
+		yield 'a plan of the group that is not an upsell' => array( self::PROFESSIONAL, array( self::ENTERPRISE ), false );
+		yield 'a product outside the group'               => array( self::OUTSIDE, array( self::ENTERPRISE ), false );
+		yield 'anything else when there are no upsells'   => array( self::ENTERPRISE, array(), false );
+	}
 }

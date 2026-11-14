@@ -5,6 +5,7 @@ namespace LibreSign\WooRestrictSwitch\Tests\Support;
 use WC_Product;
 use WC_Product_Grouped;
 use WC_Product_Subscription_Variation;
+use WC_Product_Variable;
 use WC_Product_Variable_Subscription;
 
 final class PlanFactory {
@@ -25,6 +26,7 @@ final class PlanFactory {
 		$variation->set_parent_id( $plan->get_id() );
 		$variation->set_regular_price( '10' );
 		$variation->save();
+		WC_Product_Variable::sync( $plan->get_id() );
 
 		return $variation;
 	}
