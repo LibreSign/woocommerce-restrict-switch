@@ -2,8 +2,13 @@
 
 namespace LibreSign\WooRestrictSwitch\Tests\Integration;
 
+use Automattic\WooCommerce_Subscriptions\Internal\Utilities\Request;
 use LibreSign\WooRestrictSwitch\Tests\Support\PlanFactory;
+use ReflectionProperty;
+use WC_Form_Handler;
+use WC_Product_Simple;
 use WP_Query;
+use WP_REST_Request;
 use WP_UnitTestCase;
 
 final class WoocommerceRestrictSwitchTest extends WP_UnitTestCase {
@@ -34,7 +39,9 @@ final class WoocommerceRestrictSwitchTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down() {
-		unset( $_POST['restrict_herself_upsells_switch'] );
+		unset( $_POST['restrict_herself_upsells_switch'], $_REQUEST['add-to-cart'] );
+		$this->set_request_variables( null );
+		wc_clear_notices();
 		set_current_screen( 'front' );
 
 		parent::tear_down();
@@ -247,5 +254,111 @@ final class WoocommerceRestrictSwitchTest extends WP_UnitTestCase {
 		do_action( 'woocommerce_product_options_related' );
 
 		return ob_get_clean();
+	}
+
+	public function test_refuses_a_switch_to_a_plan_outside_the_upsells_through_add_to_cart() {
+		$this->request_a_switch_from( $this->basic );
+		$_REQUEST['add-to-cart'] = $this->plans->variation_of( $this->professional )->get_id();
+
+		WC_Form_Handler::add_to_cart_action();
+
+		$this->assertTrue( WC()->cart->is_empty() );
+		$this->assertSame( 1, wc_notice_count( 'error' ) );
+	}
+
+	public function test_accepts_a_switch_to_an_upsell_through_add_to_cart() {
+		$this->request_a_switch_from( $this->basic );
+		$_REQUEST['add-to-cart'] = $this->plans->variation_of( $this->enterprise )->get_id();
+
+		WC_Form_Handler::add_to_cart_action();
+
+		$this->assertSame( array( $this->enterprise->get_id() ), $this->switches_in_the_cart() );
+	}
+
+	public function test_refuses_a_switch_to_a_plan_outside_the_upsells_through_the_store_api() {
+		$this->request_a_switch_from( $this->basic );
+
+		$response = $this->add_to_cart_through_the_store_api( $this->plans->variation_of( $this->professional ) );
+
+		$this->assertSame( 'woocommerce_rest_add_to_cart_error', $response->get_data()['code'] );
+		$this->assertTrue( WC()->cart->is_empty() );
+	}
+
+	public function test_accepts_a_switch_to_an_upsell_through_the_store_api() {
+		$this->request_a_switch_from( $this->basic );
+
+		$response = $this->add_to_cart_through_the_store_api( $this->plans->variation_of( $this->enterprise ) );
+
+		$this->assertSame( 201, $response->get_status() );
+		$this->assertSame( array( $this->enterprise->get_id() ), $this->switches_in_the_cart() );
+	}
+
+	public function test_accepts_any_switch_from_an_unrestricted_plan() {
+		$unrestricted = $this->plans->plan( false );
+		$this->plans->group( array( $unrestricted, $this->professional ) );
+		$this->request_a_switch_from( $unrestricted );
+		$_REQUEST['add-to-cart'] = $this->plans->variation_of( $this->professional )->get_id();
+
+		WC_Form_Handler::add_to_cart_action();
+
+		$this->assertSame( array( $this->professional->get_id() ), $this->switches_in_the_cart() );
+	}
+
+	public function test_adds_no_notice_of_its_own_to_a_switch_subscriptions_already_refused() {
+		$not_a_subscription = new WC_Product_Simple();
+		$not_a_subscription->set_regular_price( '10' );
+		$not_a_subscription->save();
+		$this->request_a_switch_from( $this->basic );
+		$_REQUEST['add-to-cart'] = $not_a_subscription->get_id();
+
+		WC_Form_Handler::add_to_cart_action();
+
+		$this->assertTrue( WC()->cart->is_empty() );
+		$this->assertSame( 1, wc_notice_count( 'error' ) );
+	}
+
+	private function request_a_switch_from( $plan ) {
+		$subscription = $this->plans->subscribe( $this->customer, $this->plans->variation_of( $plan ) );
+		wp_set_current_user( $this->customer );
+		wc_load_cart();
+		WC()->cart->empty_cart();
+		add_filter( 'woocommerce_add_to_cart_redirect', '__return_false', PHP_INT_MAX );
+
+		$this->set_request_variables(
+			array(
+				'switch-subscription' => $subscription->get_id(),
+				'item'                => array_key_first( $subscription->get_items() ),
+				'_wcsnonce'           => wp_create_nonce( 'wcs_switch_request' ),
+			)
+		);
+	}
+
+	private function set_request_variables( $url_variables ) {
+		( new ReflectionProperty( Request::class, 'post_vars' ) )->setValue( null, null === $url_variables ? null : array() );
+		( new ReflectionProperty( Request::class, 'url_vars' ) )->setValue( null, $url_variables );
+	}
+
+	private function add_to_cart_through_the_store_api( $variation ) {
+		$request = new WP_REST_Request( 'POST', '/wc/store/v1/cart/add-item' );
+		$request->set_header( 'Nonce', wp_create_nonce( 'wc_store_api' ) );
+		$request->set_body_params(
+			array(
+				'id'       => $variation->get_id(),
+				'quantity' => 1,
+			)
+		);
+
+		return rest_get_server()->dispatch( $request );
+	}
+
+	private function switches_in_the_cart() {
+		$switches = array();
+		foreach ( WC()->cart->get_cart() as $cart_item ) {
+			if ( isset( $cart_item['subscription_switch'] ) ) {
+				$switches[] = $cart_item['product_id'];
+			}
+		}
+
+		return $switches;
 	}
 }

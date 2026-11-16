@@ -70,6 +70,25 @@ function restrict_switch_hide_products_for_authenticated_users( $q ) {
     $q->set( 'post__not_in', $not_in );
 }
 
+add_filter( 'woocommerce_subscriptions_is_switch_valid', 'restrict_switch_validate_switch_target', 10, 6 );
+
+function restrict_switch_validate_switch_target( $is_valid, $product_id, $quantity, $variation_id, $subscription, $item ) {
+    if ( ! $is_valid || ! $item instanceof WC_Order_Item_Product ) {
+        return $is_valid;
+    }
+    $current_plan = wc_get_product( $item->get_product_id() );
+    if ( ! $current_plan || get_post_meta( $current_plan->get_id(), 'restrict_herself_upsells_switch', true ) !== 'yes' ) {
+        return $is_valid;
+    }
+    $target_id   = absint( $variation_id ? $variation_id : $product_id );
+    $target_plan = wp_get_post_parent_id( $target_id ) ?: $target_id;
+    if ( SwitchRestriction::allows_switch_to( $target_plan, $current_plan->get_id(), $current_plan->get_upsell_ids() ) ) {
+        return $is_valid;
+    }
+    wc_add_notice( __( 'Your subscription can not be switched to this product.', 'woocommerce-restrict-switch' ), 'error' );
+    return false;
+}
+
 function restrict_switch_disallow_switch_to(): array {
     $restricted_plans = restrict_switch_restricted_plans();
     $grouped_with = [];

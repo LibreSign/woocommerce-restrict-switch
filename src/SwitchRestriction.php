@@ -41,4 +41,11 @@ final class SwitchRestriction {
 
 		return $hidden;
 	}
+
+	/**
+	 * @param int[] $upsells
+	 */
+	public static function allows_switch_to( int $target, int $plan, array $upsells ): bool {
+		return $target === $plan || in_array( $target, $upsells, true );
+	}
 }
